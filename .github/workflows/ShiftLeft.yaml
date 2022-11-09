@@ -1,5 +1,5 @@
 ---
-name: Shiftleft Scan
+name: Securin-ASPM
 on:
   pull_request:
     branches:
@@ -11,19 +11,19 @@ on:
 jobs:
   scanning:
     env:
-      APP_ID: c0a793f40de30d76a4a76aa00ee5254fe8b5c7f14c82621a6df7dd49134add48
+      APP_ID: 79e173a944889b68e858cf0ae20f0b4d5d213f3c7d50f6110f3189a6ca93085b
       BRANCH_NAME: main
-      SCAN_ID: a485b8f672dd247376fab643d87055fa753c550bed6746beb366a0413c3ce3da
-      REQ_URL_MAP: "${{toJSON('{\"SL_RESULT_API_HOST\":\"https://3645-157-49-187-174.ngrok.io/resultapi\"\
-        ,\"SL_RESULTPARSER_API_HOST\":\"https://3148-157-49-187-174.ngrok.io/resultparserapi\"\
+      SCAN_ID: d8701ae91f85ab690e04b95cc3d0334cdd95d6d88b2d9d5efa8d515061f4016b
+      REQ_URL_MAP: "${{toJSON('{\"SL_RESULT_API_HOST\":\"https://c2a0-103-176-166-228.ngrok.io/resultapi\"\
+        ,\"SL_RESULTPARSER_API_HOST\":\"https://d090-103-176-166-228.ngrok.io/resultparserapi\"\
         }')}}"
     steps:
     - name: Retrieve Token Info
       id: auth_token
-      run: "respJson=$(curl --location --request GET 'https://3645-157-49-187-174.ngrok.io/resultapi/aws/ecr/token'\
+      run: "respJson=$(curl --location --request GET 'https://c2a0-103-176-166-228.ngrok.io/resultapi/aws/ecr/token'\
         \  --header 'Authorization: Bearer ${{secrets.CLI_ACCESS_TOKEN}}'  --data-raw\
-        \ ' ' )\necho \"::set-output name=authTokenJson::$respJson\""
-    - uses: actions/checkout@v2
+        \ ' ' ) \necho \"authTokenJson=$respJson\" >> $GITHUB_OUTPUT"
+    - uses: actions/checkout@v3
     - name: Scan Initiated
       id: sec_scan_init
       run: "usrVal=$(echo '${{fromJson(steps.auth_token.outputs.authTokenJson).user}}'\
@@ -39,10 +39,10 @@ jobs:
         \ --volume ${{github.workspace}}:/workdir -v /var/run/docker.sock:/var/run/docker.sock\
         \ $usrImgTag -access_tkn ${{secrets.CLI_ACCESS_TOKEN}} -app_id ${{ env.APP_ID\
         \ }} -scan_id ${{ env.SCAN_ID }} -branch_name ${{ env.BRANCH_NAME }} -req_url_map\
-        \ ${{ env.REQ_URL_MAP }} event:${{ github.event_name }}  pr_number:${{ github.event.number\
-        \ }}"
+        \ ${{ env.REQ_URL_MAP }} -tool_name github event:${{ github.event_name }}\
+        \  pr_number:${{ github.event.number }}"
     - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: "${{github.workspace}}/results/result.sarif"
       if: hashFiles('**/result.sarif') !=''
